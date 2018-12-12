@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import pathlib
+from concurrent.futures.thread import ThreadPoolExecutor
 
 import click
 import click_completion
@@ -67,7 +68,9 @@ def init(base, store, override, hash_type):
 )
 @click.option("--hash-type", default="sha256", type=click.Choice(["sha256"]))
 def verify(base, store, hash_type):
-    results = {str(f): hash_file(f, hash_type) for f in load_files(base)}
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        results = pool.map(lambda f: (str(f), hash_file(f, hash_type)), load_files(base))
+        results = {k: v for k, v in results}
 
     with open(store) as store_file:
         output_json = json.load(store_file)
