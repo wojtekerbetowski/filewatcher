@@ -56,5 +56,27 @@ def init(base, store, override, hash_type):
             logger.debug("Written to file {}".format(store))
 
 
+@cli.command()
+@click.argument("base", default=".", type=click.Path(exists=True))
+@click.option(
+    "--store",
+    "-s",
+    type=click.Path(exists=True),
+    help="will store result hashed in a given file",
+)
+@click.option("--hash-type", default="sha256", type=click.Choice(["sha256"]))
+def verify(base, store, hash_type):
+    results = {str(f): hash_file(f, hash_type) for f in load_files(base)}
+
+    with open(store) as store_file:
+        output_json = json.load(store_file)
+
+    diff = [key for key, value in results.items() if value != output_json.get(key)]
+
+    if diff:
+        print(f"Files changed: {diff}")
+        exit(len(diff))
+
+
 if __name__ == '__main__':
     cli()

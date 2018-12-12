@@ -17,9 +17,14 @@ def runner() -> CliRunner:
 def test_integration(runner: CliRunner):
     os.mkdir("workdir")
 
-    result = runner.invoke(
+    runner.invoke(
         filewatcher.cli,
         ["init", "-s", "log.json", "workdir"]
+    )
+
+    result = runner.invoke(
+        filewatcher.cli,
+        ["verify", "-s", "log.json", "workdir"]
     )
 
     assert result.output == ""
