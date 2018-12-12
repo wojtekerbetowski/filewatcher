@@ -1,9 +1,9 @@
+import asyncio
 import hashlib
 import json
 import logging
 import os
 import pathlib
-from concurrent.futures.thread import ThreadPoolExecutor
 
 import click
 import click_completion
@@ -11,13 +11,19 @@ import click_completion
 logger = logging.Logger("main")
 
 
-def load_files(dir_path):
-    for root, dirs, files in os.walk(dir_path, topdown=False):
-        for name in files:
-            yield pathlib.Path(root, name)
+async def load_files(dir_path):
+    await asyncio.sleep(0)
+
+    return (
+        pathlib.Path(root, name)
+        for root, dirs, files in os.walk(dir_path, topdown=False)
+        for name in files
+    )
 
 
-def hash_file(file_path, hash_type):
+async def hash_file(file_path, hash_type):
+    await asyncio.sleep(0)
+
     assert hash_type in hashlib.algorithms_available
 
     with open(file_path, "rb") as f:
@@ -42,11 +48,19 @@ def cli(verbose):
 @click.option("--override", is_flag=True)
 @click.option("--hash-type", default="sha256", type=click.Choice(["sha256"]))
 def init(base, store, override, hash_type):
+    asyncio.run(ainit(base, store, override, hash_type))
+
+
+async def ainit(base, store, override, hash_type):
     if pathlib.Path(store).exists() and not override:
         logger.error("Will not override file. Exiting early")
         exit(1)
 
-    results = {str(f): hash_file(f, hash_type) for f in load_files(base)}
+    files = await load_files(base)
+
+    results = {}
+    for f in files:
+        results[str(f)] = await hash_file(f, hash_type)
 
     output_json = json.dumps(results)
 
@@ -68,10 +82,15 @@ def init(base, store, override, hash_type):
 )
 @click.option("--hash-type", default="sha256", type=click.Choice(["sha256"]))
 def verify(base, store, hash_type):
-    with ThreadPoolExecutor(max_workers=10) as pool:
-        results = pool.map(lambda f: (str(f), hash_file(f, hash_type)), load_files(base))
-        results = {k: v for k, v in results}
+    asyncio.run(averify(base, store, hash_type))
 
+
+async def averify(base, store, hash_type):
+    files = await load_files(base)
+
+    results = {}
+    for f in files:
+        results[str(f)] = await hash_file(f, hash_type)
     with open(store) as store_file:
         output_json = json.load(store_file)
 
