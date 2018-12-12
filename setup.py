@@ -7,6 +7,6 @@ setup(
     install_requires=["Click"],
     entry_points="""
         [console_scripts]
-        filewatcher=filewatcher.filewatcher:main
+        filewatcher=filewatcher.filewatcher:cli
     """,
 )
