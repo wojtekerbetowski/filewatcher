@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hash tree</title>
+</head>
+<body>
+<table>
+  <tr>
+    <th>File</th>
+    <th>Hash</th>
+    </tr>
+    {% for path, hash in hash_tree.items() %}
+    <tr>
+      <td>{{ path }}</td>
+      <td>{{ hash }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
