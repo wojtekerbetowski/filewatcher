@@ -1,10 +1,8 @@
-import json
-import os
 from pathlib import Path
 
 import click
 
-from filewatcher import hashing, file_loader
+import filewatcher
 
 
 @click.group()
@@ -14,17 +12,16 @@ def main():
 
 @main.command()
 @click.argument("directory")
-@click.option("--store", type=click.Path(), required=False, default="store.json")
+@click.option(
+    "--store", type=click.Path(), required=False, default=filewatcher.DEFAULT_STORE_FILE
+)
 @click.option("--override", is_flag=True)
-def store(directory, store, override):
+def store(directory: str, store: str, override: bool):
     store_path = Path(store)
-    if store_path.exists() and not override:
-        raise Exception("Store already exists. Use --override flag to force.")
 
-    hashes = hash_tree(directory)
+    hashes = filewatcher.hash_tree(directory)
 
-    with store_path.open("w") as store:
-        json.dump(hashes, store)
+    filewatcher.store_hashes(store_path, hashes, override)
 
 
 @main.command()
@@ -32,26 +29,12 @@ def store(directory, store, override):
 @click.option("--store", type=click.Path(), required=False, default="store.json")
 def verify(directory, store):
     store_path = Path(store)
-    with store_path.open() as store_file:
-        data = json.load(store_file)
 
-    hashes = hash_tree(directory, store_path=store_path)
+    data = filewatcher.load_hashes(store_path)
+
+    hashes = filewatcher.hash_tree(directory, store_path=store_path)
 
     assert data == hashes
-
-
-def hash_tree(directory, store_path=None):
-    paths = [
-        Path(root, name)
-        for root, dirs, files in os.walk(directory)
-        for name in files
-    ]
-
-    return {
-        str(path): hashing.hash_str(file_loader.load_file(path))
-        for path in paths
-        if path.is_file() and not path == store_path
-    }
 
 
 if __name__ == "__main__":
