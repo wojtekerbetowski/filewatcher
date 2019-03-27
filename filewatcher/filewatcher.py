@@ -8,7 +8,12 @@ from . import hashing, file_loader
 DEFAULT_STORE_FILE = "store.json"
 
 
-def hash_tree(directory, store_path=None):
+Hashes = typing.Dict[str, str]
+
+
+def hash_tree(directory: str, store_path: pathlib.Path = None) -> Hashes:
+    """Walks the given directory and returns a filename to hash dict"""
+
     paths = [
         pathlib.Path(root, name)
         for root, dirs, files in os.walk(directory)
@@ -22,9 +27,9 @@ def hash_tree(directory, store_path=None):
     }
 
 
-def store_hashes(
-    store_path: pathlib.Path, hashes: typing.Dict[str, str], override: bool
-):
+def store_hashes(store_path: pathlib.Path, hashes: Hashes, override: bool) -> None:
+    """Saves hashes into a given JSON file"""
+
     if store_path.exists() and not override:
         raise Exception("Store already exists. Use --override flag to force.")
 
@@ -32,6 +37,8 @@ def store_hashes(
         json.dump(hashes, store)
 
 
-def load_hashes(store_path: pathlib.Path):
+def load_hashes(store_path: pathlib.Path) -> Hashes:
+    """Load `Hashes` from a given JSON file"""
+
     with store_path.open() as store_file:
         return json.load(store_file)
